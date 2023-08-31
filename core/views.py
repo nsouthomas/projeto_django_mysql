@@ -1,9 +1,14 @@
 from django.shortcuts import render
 from .forms import ContatoForm, ProdutoModelForm
 from django.contrib import messages
+from .models import Produto
+from django.shortcuts import redirect
 
 def index (request) :
-    return render(request, 'index.html')
+    context = {
+        'produtos': Produto.objects.all()
+    }
+    return render(request, 'index.html', context)
     
 def contato (request) :
     form = ContatoForm(request.POST or None)
@@ -33,27 +38,31 @@ def contato (request) :
     return render (request, 'contato.html', context)
     
 def produto(request):
-    form = ProdutoModelForm()
-    if request.method == 'POST':
-        form = ProdutoModelForm(request.POST, request.FILES)
-        if form.is_valid():
-            prod = form.save(commit=False)
-            print(f'Nome: {prod.nome}')
-            print(f'Preço: {prod.preco}')
-            print(f'Estoque: {prod.estoque}')
-            print(f'Imagem: {prod.imagem}')   
-
-            prod.save()
-            
-            messages.success(request, 'Produto salvo com sucesso.')
-            form = ProdutoModelForm()
-        else:
-            messages.error(request, 'Erro ao salvar produto.')
-    else:
+    if str(request.user) != 'AnonymousUser':
+        print(f'Usuário: {request.user}')
         form = ProdutoModelForm()
+        if request.method == 'POST':
+            form = ProdutoModelForm(request.POST, request.FILES)
+            if form.is_valid():
+                prod = form.save(commit=False)
+                print(f'Nome: {prod.nome}')
+                print(f'Preço: {prod.preco}')
+                print(f'Estoque: {prod.estoque}')
+                print(f'Imagem: {prod.imagem}')   
 
-    context = {'form': form}
-    return render(request, 'produto.html', context)
+                prod.save()
+                
+                messages.success(request, 'Produto salvo com sucesso.')
+                form = ProdutoModelForm()
+            else:
+                messages.error(request, 'Erro ao salvar produto.')
+        else:
+            form = ProdutoModelForm()
+
+        context = {'form': form}
+        return render(request, 'produto.html', context)
+    else:
+        return redirect('index')
 
 
 
